@@ -67,3 +67,16 @@ end
 i = sort(randperm(p)[1:t+1])
 pₖ = y_intercept(x[i], S[i], 𝔽ₚ)
 pₖ == Pₖ 
+
+## PROACTIVE REFRESH: adding a random polynomial with y intercept being 0, does not change the private key
+Qᵤ = hcat(zeros(Int, p),rand(1:𝔽ₚ - 1, p, t)) 
+Yᵤ = sum(Qᵤ[:,1])                  # the y intercept should be zero
+Uᵉ = mod.(X * Qᵤ', 𝔽ₚ)             # the polynomials evaluated at x
+Uᵈ = Uᵉ'                           # distribute the values
+Sᵤ = mod.(sum(Uᵈ, dims=1), 𝔽ₚ)'    # compute the shard updates
+Sₙ = S + Sᵤ                        # do the update 
+i = sort(randperm(p)[1:t+1])       # pick t threshold, or more random participants
+pᵤ = y_intercept(x[i], Sₙ[i], 𝔽ₚ)  # recover the secret (this should not be done, instead use homomorphic computation)
+pᵤ == Pₖ                           # this should be equal
+
+
