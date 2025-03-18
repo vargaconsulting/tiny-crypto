@@ -144,3 +144,22 @@ function is_generator(G::Point{T}, curve::Weierstrass{T}, n::T) where {T}
     return true # valid generator point
 end
 
+function Weierstrass(Π::UnitRange{T}, A::UnitRange{T}, B::UnitRange{T} ) where T
+    for π ∈ primes(Π)  # Generate primes within the range
+        for a ∈ A  # Loop over curve parameter a
+            for b ∈ B  # Loop over curve parameter b
+                if mod(4a^3 + 27b^2, π) == 0 continue end  # Check for singularity
+                proposed_curve = Weierstrass{T}(π, a, b, 0, Point{T}(nothing, nothing))
+                E = curve_points(proposed_curve)  # Generate points on the curve
+                N = length(E)  # Compute group order
+                if !is_prime(N) continue end  # Skip if group order is not prime
+                for P ∈ E
+                    if P.x === nothing continue end  # Skip point at infinity
+                    if is_generator(P, proposed_curve, N)
+                        return Weierstrass{T}(π, a, b, N, P)
+                    end
+                end
+            end
+        end
+    end
+end
