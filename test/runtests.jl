@@ -2,7 +2,8 @@ using Test
 using TinyCrypto
 
 @testset "Curve tests" begin
-    @test 1 + 1 == 2
+    include("test_ecpoint.jl")
+    include("test_weierstrass.jl")
 end
 
 @testset "Example: DKG" begin
