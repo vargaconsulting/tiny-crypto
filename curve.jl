@@ -1,3 +1,5 @@
+using Random
+
 #   Copyright © <2010-2025> Varga Consulting, Toronto, On     info@vargaconsulting.ca
 macro attach(st, fields...)
 	block = Expr(:block)
@@ -165,41 +167,46 @@ function Weierstrass(Π::UnitRange{T}, A::UnitRange{T}, B::UnitRange{T} ) where 
 end
 
 ## Edwards curve: x² + y² = 1 + dx²y²
-struct Edwards{T} <: Curve
-    @define(T, π, d, order)
+# --- Twisted Edwards Curve Support ---
+struct TwistedEdwards{T} <: Curve
+    @define(T, π, a, d, order)
     G::Point{T}
 end
 
-function Base.show(io::IO, curve::Edwards{T}) where T
-    @attach(curve, π, d, order, G)
-    print(io, "Edwards curve: x^2 + y^2 = 1 + $d x^2 y^2 mod $π with order: $order and generator point: $G")
+function Base.show(io::IO, curve::TwistedEdwards{T}) where T
+    @attach(curve, π, a, d, order, G)
+    if a == one(T)
+        print(io, "Edwards curve: x² + y² = 1 + $d x² y² mod $π with order: $order and generator point: $G")
+    else
+        print(io, "Twisted Edwards curve: $a x² + y² = 1 + $d x² y² mod $π with order: $order and generator point: $G")
+    end
 end
-
-function point_add(P::Point{T}, Q::Point{T}, curve::Edwards{T}) where T
-    @attach(curve, π, d)
+function point_add(P::Point{T}, Q::Point{T}, curve::TwistedEdwards{T}) where T
+    @attach(curve, π, a, d)
     if P.x === nothing || P.y === nothing
         return Q
     elseif Q.x === nothing || Q.y === nothing
         return P
     end
-
     x1, y1 = P.x, P.y
     x2, y2 = Q.x, Q.y
 
-    denom_x = mod(1 + d * x1 * x2 * y1 * y2, π)
-    if denom_x == 0 return Point{T}(nothing, nothing) end
-    x3 = mod((x1 * y2 + y1 * x2) * mod_inverse(denom_x, π), π)
+    A = mod((y1 - x1) * (y2 - x2), π)
+    B = mod((y1 + x1) * (y2 + x2), π)
+    C = mod(d * x1 * x2 * y1 * y2, π)
+    D = mod(a * C, π)
+    E = mod(B - A, π)
+    F = mod(1 - D, π)
+    G_ = mod(1 + D, π)
+    H = mod(B + A, π)
 
-    denom_y = mod(1 - d * x1 * x2 * y1 * y2, π)
-    if denom_y == 0 return Point{T}(nothing, nothing) end
-    y3 = mod((y1 * y2 - x1 * x2) * mod_inverse(denom_y, π), π)
-
+    x3 = mod(E * mod_inverse(F, π), π)
+    y3 = mod(H * mod_inverse(G_, π), π)
     return Point{T}(x3, y3)
 end
 
-
-function scalar_mult(k::Int, P::Point{T}, curve::Edwards{T}) where T
-    R, N = Point{T}(0, 1), P  # identity = (0, 1)
+function scalar_mult(k::Int, P::Point{T}, curve::TwistedEdwards{T}) where T
+    R, N = Point{T}(0, 1), P
     while k > 0
         if k & 1 == 1
             R = point_add(R, N, curve)
@@ -210,15 +217,34 @@ function scalar_mult(k::Int, P::Point{T}, curve::Edwards{T}) where T
     return R
 end
 
-function curve_points(curve::Edwards{T}) where {T}
-    @attach(curve, π, d)
+function is_point_on_curve(P::Point{T}, curve::TwistedEdwards{T}) where {T}
+    if P.x === nothing || P.y === nothing
+        return false
+    end
+    @attach(curve, π, a, d)
+    x2 = mod(P.x^2, π)
+    y2 = mod(P.y^2, π)
+    lhs = mod(a * x2 + y2, π)
+    rhs = mod(1 + d * x2 * y2, π)
+    return lhs == rhs
+end
+
+function is_generator(G::Point{T}, curve::TwistedEdwards{T}, n::T) where {T}
+    if !is_point_on_curve(G, curve)
+        return false
+    end
+    return scalar_mult(n, G, curve) == Point{T}(0, 1)
+end
+
+function curve_points(curve::TwistedEdwards{T}) where {T}
+    @attach(curve, π, a, d)
     points = Point{T}[]
     for x in 0:π-1
-        x² = mod(x^2, π)
+        x2 = mod(x^2, π)
         for y in 0:π-1
-            y² = mod(y^2, π)
-            lhs = mod(x² + y², π)
-            rhs = mod(1 + d * x² * y², π)
+            y2 = mod(y^2, π)
+            lhs = mod(a * x2 + y2, π)
+            rhs = mod(1 + d * x2 * y2, π)
             if lhs == rhs
                 push!(points, Point(x, y))
             end
@@ -226,34 +252,14 @@ function curve_points(curve::Edwards{T}) where {T}
     end
     return points
 end
-function is_point_on_curve(P::Point{T}, curve::Edwards{T}) where {T}
-    if P.x === nothing || P.y === nothing
-        return false  # Edwards curves don't include the point at infinity
-    end
-    @attach(curve, π, d)
-    x² = mod(P.x^2, π)
-    y² = mod(P.y^2, π)
-    lhs = mod(x² + y², π)
-    rhs = mod(1 + d * x² * y², π)
-    return lhs == rhs
-end
 
-function is_generator(G::Point{T}, curve::Edwards{T}, n::T) where {T}
-    # Check if the point lies on the curve
-    if !is_point_on_curve(G, curve)
-        return false
-    end
-    # Check if [n]G == identity element (0, 1)
-    return scalar_mult(n, G, curve) == Point{T}(0, 1)
-end
-
-function Edwards(Π::UnitRange{T}, D::UnitRange{T}) where T
+function TwistedEdwards(Π::UnitRange{T}, A::UnitRange{T}, D::UnitRange{T}) where T
     for π ∈ primes(Π)
-        for d ∈ D
-            if d == 0 || d == 1 continue end
-            proposed_curve = Edwards{T}(π, d, 0, Point{T}(0, 1))  # Start with identity
-            E = curve_points(proposed_curve)  # Generate points on the curve
-            N = length(E)  # Compute group order
+        for a ∈ A, d ∈ D
+            if a == 0 || d == 0 || d == 1 continue end
+            proposed_curve = TwistedEdwards{T}(π, a, d, 0, Point{T}(0, 1))
+            E = curve_points(proposed_curve)
+            N = length(E)
             for h in 1:8
                 r, rem = divrem(N, h)
                 if rem != 0 || !is_prime(r)
@@ -262,13 +268,18 @@ function Edwards(Π::UnitRange{T}, D::UnitRange{T}) where T
                 for P in shuffle(E)
                     if P.x === nothing || P.y === nothing continue end
                     if is_generator(P, proposed_curve, r)
-                        return Edwards{T}(π, d, r, P)
+                        return TwistedEdwards{T}(π, a, d, r, P)
                     end
                 end
-                
             end
         end
     end
-    println("No Edwards curve with prime group order found")
+    println("No Twisted Edwards curve with prime-order subgroup found")
+end
+Edwards(π::T, d::T, order::T, G::Point{T}) where T =
+    TwistedEdwards{T}(π, one(T), d, order, G)
+
+function Edwards(Π::UnitRange{T}, D::UnitRange{T}) where T
+    return TwistedEdwards(Π, one(T):one(T), D)
 end
 
