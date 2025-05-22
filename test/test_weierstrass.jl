@@ -10,7 +10,7 @@ using TinyCrypto
 
     # 0 * G = ∞
     P0 = scalar_mult(0, G, curve)
-    @test P0 == Point{Int}(nothing, nothing)
+    @test is_infinity(P0) 
 
     # 1 * G = G
     P1 = scalar_mult(1, G, curve)
@@ -28,5 +28,5 @@ using TinyCrypto
 
     # Generator of prime order should cycle back to identity
     Pn = scalar_mult(curve.order, G, curve)
-    @test Pn == Point{Int}(nothing, nothing)
+    @test is_infinity(Pn)
 end
