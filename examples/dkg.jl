@@ -1,5 +1,5 @@
 module ExampleDKG
-using TinyCrypto,LinearAlgebra,Random
+using TinyCrypto, LinearAlgebra, Random
 
     function mod_inverse(a, p)
         return powermod(a, p - 2, p)
