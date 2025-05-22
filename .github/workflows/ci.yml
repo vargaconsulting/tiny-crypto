@@ -8,26 +8,35 @@ on:
 
 jobs:
   test:
+    name: Julia ${{ matrix.version }} - ${{ github.event_name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.11', 'nightly']
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Julia
-      uses: julia-actions/setup-julia@v1
-      with:
-        version: '1.11'
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
 
-    - name: Install dependencies
-      run: julia -e 'using Pkg; Pkg.instantiate()'
+      - name: Cache Julia artifacts
+        uses: actions/cache@v4  # ✅ updated
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-${{ matrix.version }}-artifacts-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.version }}-artifacts-
+            ${{ runner.os }}-artifacts-
 
-    - name: Run tests
-      run: julia --project --code-coverage=all -e 'using Pkg; Pkg.test()'
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        fail_ci_if_error: true
-        verbose: true
-
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: lcov.info
+          fail_ci_if_error: true
+          verbose: true

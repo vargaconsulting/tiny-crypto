@@ -1,9 +1,10 @@
-# .codecov.yml
 codecov:
   require_ci_to_pass: yes
 
 coverage:
+  precision: 2
+  round: down
   status:
     project:
       default:
-        target: 80%     # You can raise this later
+        target: 80%
