@@ -1,4 +1,5 @@
 [![CI](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml/badge.svg)](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/vargaconsulting/tiny-crypto/branch/main/graph/badge.svg)](https://codecov.io/gh/vargaconsulting/tiny-crypto)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 # Tiny Crypto – Exploring Cryptography with Small Prime Fields

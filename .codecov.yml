@@ -1,0 +1,9 @@
+# .codecov.yml
+codecov:
+  require_ci_to_pass: yes
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%     # You can raise this later
