@@ -60,7 +60,6 @@ deps/src/
 # =======================
 *.ipynb
 *.html
-*.md
 *.pdf
 *.tex
 *.svg
