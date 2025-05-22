@@ -1,134 +1,94 @@
 using ..Macroes
 using ..Utils
+using ..Field: Fp, 𝔽ₚ, isprime
 
-struct Weierstrass{T} <: Curve
-    @define(T, π,a,b, order) # prime, a,b, order
-    G::Point{T}  # Generator point (x, y)
+mutable struct Weierstrass{F<:Fp} <: Curve
+    @define(Int, π, a, b, order)
+    G::ECPoint{F, Weierstrass{F}}
+
+    function Weierstrass{F}(a::Integer, b::Integer, order::Integer, Gxy::Tuple{Integer,Integer}) where {F<:Fp}
+        π = Int(F.parameters[2])
+        self = new{F}(π, a, b, order) # Incomplete initialization step
+        self.G = ECPoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self) # Fully initialize G
+        return self
+    end
 end
 
-function Base.show(io::IO, curve::Weierstrass{T}) where {T}
+function Weierstrass(π::T, a::Integer, b::Integer, order::Integer, Gxy::Tuple{Integer,Integer}) where {T<:Integer}
+    F = Fp{unsigned(T), reinterpret(unsigned(T), π)}
+    return Weierstrass{F}(a, b, order, Gxy)
+end
+
+curve_equation_rhs(x::F, curve::Weierstrass{F}) where {F<:Fp} = x^3 + curve.a * x + curve.b
+curve_equation_lhs(P::Point{F}, curve::Weierstrass{F}) where {F<:Fp} = P.y^2
+function is_singular(curve::Weierstrass{F}) where {F<:Fp}
+    @attach(curve, a,b, π)
+    return mod(4a^3 + 27b^2, π) == 0
+end
+
+function Base.show(io::IO, curve::Weierstrass{F}) where {F<:Fp}
     @attach(curve, π, a, b, order, G)
-    terms = []
-    push!(terms, "x³")  # x³ is always present
-    if a != 0
-        push!(terms, "$a x")  # Include x term only if a ≠ 0
-    end
-    if b != 0
-        push!(terms, "$b")  # Include constant term only if b ≠ 0
-    end
-    # Join the terms with " + " for a proper display
-    curve_equation = join(terms, " + ")
-    print(io, "Weierstrass curve: y² = $curve_equation mod $π with order: $order and generator point: $G")
+    @assert π == F.parameters[2]
+
+    a_int, b_int = Int(a), Int(b) # Extract plain integers
+    bold(x) = "\e[1m$(x)\e[22m"   # Format bold numbers using ANSI escape codes
+
+    terms = ["x³"]
+    a_int != 0 && push!(terms, "$(bold(a_int))x")
+    b_int != 0 && push!(terms, bold(b_int))
+
+    curve_eq = join(terms, " + ")
+
+    P = F.parameters[2]
+    subscript = join(Char(0x2080 + d) for d in reverse(digits(P)))
+    field_str = "𝔽$subscript"
+
+    gx = Int(G.point.x)
+    gy = Int(G.point.y)
+    G_str = "𝔾($(bold(gx)),$(bold(gy)))"
+
+    print(io, "Weierstrass curve: y² = $curve_eq |$field_str with order: $(bold(order)) and $G_str")
 end
 
-# Point addition
-function point_add(P::Point{T}, Q::Point{T}, curve::Weierstrass{T})::Point{T} where {T}
-    if P.x === nothing
+function point_add(P::Point{F}, Q::Point{F}, curve::Weierstrass{F})::Point{F} where {F<:Fp}
+    if is_infinity(P)
         return Q
-    elseif Q.x === nothing
+    elseif is_infinity(Q)
         return P
     elseif P.x == Q.x && P.y != Q.y
-        return Point{T}(nothing, nothing)
+        return infinity(F)
     end
 
-    π = curve.π
     λ = if P != Q
-        mod((Q.y - P.y) * mod_inverse(Q.x - P.x, π), π)
+        (Q.y - P.y) / (Q.x - P.x)
     else
-        num = mod(3 * powermod(P.x, 2, π) + curve.a, π)            ### FIXED
-        den = mod_inverse(2 * P.y, π)
-        mod(num * den, π)
+        (F(3) * P.x^2 + curve.a) / (F(2) * P.y)
     end
 
-    x₃ = mod(powermod(λ, 2, π) - P.x - Q.x, π)                     ### FIXED
-    y₃ = mod(λ * (P.x - x₃) - P.y, π)
-    return Point{T}(x₃, y₃)
+    x3 = λ^2 - P.x - Q.x
+    y3 = λ * (P.x - x3) - P.y
+    return Point{F}(x3, y3)
 end
 
-
-# Scalar multiplication
-function scalar_mult(k::Integer, P::Point{T}, curve::Weierstrass{T}) where {T<:Integer}
-    if k < 0
-        return scalar_mult(-k, Point{T}(P.x, (-P.y) % curve.π), curve)
-    end
-    R, N = Point{T}(nothing, nothing), P
-    while k > 0
-        if k % 2 == 1
-            R = point_add(R, N, curve)
-        end
-        N = point_add(N, N, curve)
-        k ÷= 2
-    end
-    return R
-end
-
-function is_point_on_curve(P::Point{T}, curve::Weierstrass{T}) where {T}
-    if P.x === nothing
-        return true
-    end
-    π = curve.π
-    lhs = mod(powermod(P.y, 2, π), π)                              ### FIXED
-    rhs = mod(powermod(P.x, 3, π) + curve.a * P.x + curve.b, π)   ### FIXED
-    return lhs == rhs
-end
-
-
-function curve_points(curve::Weierstrass{T}) where {T}
-    @attach(curve, a,b,π,order)
-    quadratic_residues = Set(powermod(y, 2, π) for y in 0:π-1)     ### FIXED
-    points = []
-    for x in 0:π-1
-        y² = mod(powermod(x, 3, π) + a * x + b, π)                 ### FIXED
-        if y² in quadratic_residues
-            for y in 0:π-1
-                if powermod(y, 2, π) == y²                         ### FIXED
-                    push!(points, Point{T}(x, y))
+function Weierstrass(Π::UnitRange, A::UnitRange, B::UnitRange, ::Val{T}=Val(UInt128)) where {T<:Unsigned}
+    for π ∈ primes(Π)
+        isprime(π) || continue
+        for a ∈ A, b ∈ B
+            F = Fp{T, π}
+            proposed = Weierstrass{F}(a, b, 0, (0, 0))  # dummy order, dummy generator
+            is_singular(proposed) && continue
+            E = curve_points(proposed)
+            N = length(E)
+            
+            isprime(N) || continue
+            
+            for P in E
+                if !is_infinity(P) && is_generator(P, proposed, N)
+                    return Weierstrass{F}(a, b, N, (Int(P.x), Int(P.y)))
                 end
             end
         end
     end
-    push!(points, Point{T}(nothing, nothing))
-    return points
+    @info("No suitable curve found.")
 end
 
-
-function is_generator(G::Point, curve::Weierstrass, n::Integer)
-    T = typeof(curve.π)
-    π = curve.π
-    lhs = mod(powermod(G.y, 2, π), π)                              ### FIXED
-    rhs = mod(powermod(G.x, 3, π) + curve.a * G.x + curve.b, π)   ### FIXED
-    if lhs != rhs
-        return false
-    end
-    return scalar_mult(convert(T, n), G, curve) == Point{T}(nothing, nothing)
-end
-
-
-function Weierstrass(Π::UnitRange{T}, A::UnitRange{T}, B::UnitRange{T} ) where {T}
-    for π ∈ primes(Π)  # Generate primes within the range
-        for a ∈ A  # Loop over curve parameter a
-            for b ∈ B  # Loop over curve parameter b
-                if mod(4a^3 + 27b^2, π) == 0 continue end  # Check for singularity
-                proposed_curve = Weierstrass{T}(π, a, b, 0, Point{T}(nothing, nothing))
-                E = curve_points(proposed_curve)  # Generate points on the curve
-                N = length(E)  # Compute group order
-                if !is_prime(N) continue end  # Skip if group order is not prime
-                for P ∈ E
-                    if P.x === nothing continue end  # Skip point at infinity
-                    if is_generator(P, proposed_curve, N)
-                        return Weierstrass{T}(π, a, b, N, Point{T}(P))
-                    end
-                end
-            end
-        end
-    end
-    error("No suitable Weierstrass curve found in given ranges.")
-end
-
-function Weierstrass{T}(πs::UnitRange, as::UnitRange, bs::UnitRange) where {T<:Integer}
-    cast(x) = T(x)
-    πs_cast = T(first(πs)):T(last(πs))
-    as_cast = T(first(as)):T(last(as))
-    bs_cast = T(first(bs)):T(last(bs))
-    return Weierstrass(πs_cast, as_cast, bs_cast)
-end

@@ -9,24 +9,34 @@ using TinyCrypto
     @test is_generator(G, curve, curve.order)
 
     # 0 * G = ∞
-    P0 = scalar_mult(0, G, curve)
-    @test P0 == Point{Int}(nothing, nothing)
+    P = scalar_mult(0, G.point, curve)
+    @test is_infinity(P) 
+    P = 0 * G
+    @test is_infinity(P) 
 
     # 1 * G = G
-    P1 = scalar_mult(1, G, curve)
-    @test P1 == G
+    P = scalar_mult(1, G.point, curve)
+    @test P == G.point
+    P = 1 * G
+    @test P == G
 
     # 2 * G = G + G
-    P2a = scalar_mult(2, G, curve)
-    P2b = point_add(G, G, curve)
-    @test P2a == P2b
+    P₁ = scalar_mult(2, G.point, curve)
+    P₂ = point_add(G.point, G.point, curve)
+    @test P₁ == P₂
+    P₁,P₂ = 2 * G, G + G
+    @test P₁ == P₂
 
     # Scalar multiplication distributes over addition
-    P3a = scalar_mult(3, G, curve)
-    P3b = point_add(G, point_add(G, G, curve), curve)
-    @test P3a == P3b
+    P₁ = scalar_mult(3, G.point, curve)
+    P₂ = point_add(G.point, point_add(G.point, G.point, curve), curve)
+    @test P₁ == P₂
+    P₁, P₂ = 3 * G, G + G + G
+    @test P₁ == P₂
 
     # Generator of prime order should cycle back to identity
-    Pn = scalar_mult(curve.order, G, curve)
-    @test Pn == Point{Int}(nothing, nothing)
+    P = scalar_mult(curve.order, G.point, curve)
+    @test is_infinity(P)
+    P = curve.order * G
+    @test is_infinity(P)
 end
