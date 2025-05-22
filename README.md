@@ -1,3 +1,6 @@
+[![CI](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml/badge.svg)](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 # Tiny Crypto – Exploring Cryptography with Small Prime Fields
 
 **A small-scale cryptography playground using tiny prime fields for easy manual verification.**
