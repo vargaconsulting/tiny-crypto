@@ -2,6 +2,7 @@ using Test
 using TinyCrypto
 
 @testset "Curve tests" begin
+    include("test_hash.jl")
     include("test_field.jl")
 end
 
