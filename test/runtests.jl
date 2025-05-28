@@ -5,6 +5,7 @@ using TinyCrypto
     include("test_field.jl")
     include("test_montgomery.jl")
     include("test_edwards.jl")
+    include("test_weierstrass.jl")
 end
 
 @testset "Example: DKG" begin
