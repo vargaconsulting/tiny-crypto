@@ -36,22 +36,60 @@ The project includes:
 
 ```julia
 using TinyCrypto
+import TinyCrypto: is_identity
 
-# Find a suitable Weierstrass curve over small field primes and coefficient ranges
+# Find a suitable Weierstrass curve over small field primes and coefficient ranges with iterative method
+# general syntax: curve-name(prime-field-range, parameter-range₁, ..., parameter-rangeₙ, max_cofactor=8)
 curve = Weierstrass(97:103, 10:15, 2:7)  # (prime range, a range, b range)
-# Output: Weierstrass curve: y² = x³ + 10x + 3 |𝔽₉₇ with order: 101 and 𝔾(0,10)
+# Output: Weierstrass{𝔽₉₇}: y² = x³ + 10x + 3 | 𝔾(0,10), q = 101, h = 1, #E = 10
 
-# Get all curve points
-E = curve_points(curve)
+E = curve_points(curve) # Get all curve points
 # → 101-element Vector{ECPoint₁₂₈}: (0𝔽₉₇,10𝔽₉₇), (0𝔽₉₇,87𝔽₉₇), ..., (96𝔽₉₇,63𝔽₉₇), (∞,∞)
+S = subgroup_points(curve) # same as `curve_points` as #E(𝔽₉₇) ∈ primes
 
-# ECDSA example
-private_key = 42
-msg = 33
+curve = Montgomery(30:40, 8:40, 3:40)
+# Montgomery{𝔽₃₇}: 8y² = x³ + 3x² + x | 𝔾(15,2), q = 11, h = 4, #E = 44
+S = subgroup_points(curve) # when cofactor greater than one, there are multiple sub groups
+E = curve_points(curve)
 
-public_key = private_key2public(private_key, curve) # ECPoint on curve
-r, s, v = ecdsa_sign(curve, private_key, msg)
-ecdsa_verify(curve, public_key, r, s, v)  # true
+curve = TwistedEdwards(50:100, 1:20, 1:20)
+# TwistedEdwards{𝔽₉₇}: 3x² + y² = 1 + 10x²y² | 𝔾(48,93), q = 29, h = 4, #E = 116
+
+curve = Edwards(50:100, 1:20, max_cofactor=8)
+# Edwards{𝔽₇₉}: 1x² + y² = 1 + 6x²y² | 𝔾(7,58), q = 23, h = 4, #E = 92
+is_singular(curve) # false
+
+## Point arithmetic on curve
+𝔾 = curve.G                          # (7𝔽₇₉,58𝔽₇₉) ∈ Edwards{Fp{UInt128, 79}}
+𝔾 + 𝔾 + 𝔾 + 𝔾                        # (68𝔽₇₉,67𝔽₇₉)  point addition on a cyclic group
+2𝔾                                   # (31𝔽₇₉,51𝔽₇₉) 
+2𝔾 == 𝔾 + 𝔾                          # true
+
+𝒪 = identity(curve)                   # identity point on Edwards curve variant: (0𝔽₇₉,1𝔽₇₉)
+𝒪 + 𝔾 == 𝔾                            # true
+𝔾 + 𝒪 == 𝔾                            # true  
+
+# direct construction from paramters:
+const 𝔽₃₁ = 𝔽ₚ{UInt8, 31}                   # define field prime 𝔽ₚ for the abelian group, or use non-unicode `Fp{base_type, prime_number}`
+Weierstrass{𝔽₃₁}(6, 9, 37, 1, (0,3))        # Weierstrass{𝔽₃₁}: y² = x³ + 6x + 9 | 𝔾(0,3), q = 37, h = 1, #E = 37
+# or pass the 𝔽ₚ field prime directly as in:
+curve = Weierstrass(31, 6, 9, 37, 1, (0,3)) # Weierstrass{𝔽₃₁}: y² = x³ + 6x + 9 | 𝔾(0,3), q = 37, h = 1, #E = 37
+
+𝒪 = identity(curve)                    # (∞,∞) Weierstrass curve identity is infinity
+is_identity(𝒪)                         # true 
+∞ = infinity(curve)                    # (∞,∞) as expected
+is_infinity(∞)                         # true
+
+E = curve_points(curve)                # 
+is_point_on_curve(E[1], curve)         # true 
+is_point_on_curve(curve.G, curve)      # true, G generator point defines the cyclic group, which in this case the entire abelien group 
+
+
+
+## Tiny Hash (not for cryptographic use, for obvious reasons)
+H("byte size hash of a string")        # hashes string to a byte, given the abelian group is byte size
+H₁₆("16 bit hash")                     # in case you need more hash space
+H₈("is same") == H("is same")          # true, it is just a alias, smae as H8 
 ```
 
 ## Installation
