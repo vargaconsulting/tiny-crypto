@@ -2,7 +2,7 @@ using Test
 using TinyCrypto
 import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, point_add
 
-@testset "Twisted Edwards Curve Test Suite" begin
+@testset "Edwards Curve Test Suite" begin
     # Shared curve setup Twisted Edwards curve: 1x² + y² = 1 + 15x²y² |𝔽₃₇ with order: 11 cofactor: 4 and 𝔾(18,17)
     π, a, d, order, cofactor = 37, 1, 15, 11, 4
     Gˣʸ    = (18, 17)   
