@@ -1,3 +1,10 @@
+[![CI](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml/badge.svg)](https://github.com/vargaconsulting/tiny-crypto/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/vargaconsulting/tiny-crypto/branch/main/graph/badge.svg)](https://codecov.io/gh/vargaconsulting/tiny-crypto)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/950847209.svg)](https://doi.org/10.5281/zenodo.15492419)
+[![GitHub release](https://img.shields.io/github/v/release/vargaconsulting/tiny-crypto.svg)](https://github.com/vargaconsulting/tiny-crypto/releases)
+[![Documentation](https://img.shields.io/badge/docs-stable-blue)](https://vargaconsulting.github.io/tiny-crypto)
+
 # Tiny Crypto – Exploring Cryptography with Small Prime Fields
 
 **A small-scale cryptography playground using tiny prime fields for easy manual verification.**
