@@ -3,6 +3,7 @@ using TinyCrypto
 
 @testset "Curve tests" begin
     include("test_field.jl")
+    include("test_weierstrass.jl")
 end
 
 @testset "Example: DKG" begin
