@@ -4,12 +4,12 @@ using ..Field: Fp, 𝔽ₚ
 
 mutable struct Edwards{F<:Fp} <: Curve
     @define(Int, π, a, d, order, cofactor)
-    G::ECPoint{F, Edwards{F}}
+    G::AffinePoint{F, Edwards{F}}
 
     function Edwards{F}(a::Integer, d::Integer, order::Integer, cofactor::Integer, Gxy::Tuple{Integer,Integer}) where {F<:Fp}
         π = Int(F.parameters[2])
         self = new{F}(π, a, d, order, cofactor)
-        self.G = ECPoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self)
+        self.G = AffinePoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self)
         return self
     end
 end

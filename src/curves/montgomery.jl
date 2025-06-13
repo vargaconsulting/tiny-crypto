@@ -4,12 +4,12 @@ using ..Field: Fp, 𝔽ₚ
 
 mutable struct Montgomery{F<:Fp} <: Curve
     @define(Int, π, B, A, order, cofactor)
-    G::ECPoint{F, Montgomery{F}}
+    G::AffinePoint{F, Montgomery{F}}
 
     function Montgomery{F}(B::Integer, A::Integer, order::Integer, cofactor::Integer, Gxy::Tuple{Integer,Integer}) where {F<:Fp}
         π = Int(F.parameters[2])
         self = new{F}(π, B, A, order, cofactor)
-        self.G = ECPoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self)
+        self.G = AffinePoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self)
         return self
     end
 end

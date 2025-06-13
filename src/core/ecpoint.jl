@@ -19,36 +19,35 @@ function Base.show(io::IO, P::Point{F}) where {F<:Fp}
 end
 
 abstract type Curve end
-struct ECPoint{T,C<:Curve}
+struct AffinePoint{T,C<:Curve}
     point::Point{T}
     curve::C
 end
-ECPoint(curve::C) where {C<:Curve} = ECPoint(typeof(curve.G.point.x), curve)
+AffinePoint(curve::C) where {C<:Curve} = AffinePoint(typeof(curve.G.point.x), curve)
 
 # Infinity
 is_infinity(P::Point) = P.x === nothing && P.y === nothing
 identity(curve::C) where {C<:Curve} = infinity(curve)
 
-Base.zero(curve::C) where {C<:Curve} = ECPoint(identity(curve), curve)
-Base.identity(curve::C) where {C<:Curve} = ECPoint(identity(curve), curve)
+Base.zero(curve::C) where {C<:Curve} = AffinePoint(identity(curve), curve)
+Base.identity(curve::C) where {C<:Curve} = AffinePoint(identity(curve), curve)
 Base.:(==)(A::Point{F}, B::Point{F}) where {F<:Fp} = A.x == B.x && A.y == B.y
-Base.:(==)(A::ECPoint{T,C}, B::ECPoint{T,C}) where {T,C<:Curve} = A.point == B.point && A.curve == B.curve
-Base.show(io::IO, P::ECPoint{T,C}) where {T,C} = print(io, "$(P.point) ∈ ", typeof(P.curve))
-Base.:+(A::ECPoint{T,C}, B::ECPoint{T,C}) where {T,C<:Curve} = begin
-    A.curve == B.curve || error("ECPoint curve mismatch")
-    ECPoint(point_add(A.point, B.point, A.curve), A.curve)
+Base.:(==)(A::AffinePoint{T,C}, B::AffinePoint{T,C}) where {T,C<:Curve} = A.point == B.point && A.curve == B.curve
+Base.:+(A::AffinePoint{T,C}, B::AffinePoint{T,C}) where {T,C<:Curve} = begin
+    A.curve == B.curve || error("AffinePoint curve mismatch")
+    AffinePoint(point_add(A.point, B.point, A.curve), A.curve)
 end
-Base.:*(k::Integer, A::ECPoint{T,C}) where {T,C<:Curve} = is_infinity(A) || is_identity(A) ? A : ECPoint(scalar_mult(k, A.point, A.curve), A.curve)
+Base.:*(k::Integer, A::AffinePoint{T,C}) where {T,C<:Curve} = is_infinity(A) || is_identity(A) ? A : AffinePoint(scalar_mult(k, A.point, A.curve), A.curve)
 
-Base.:-(A::ECPoint{T,C}, B::ECPoint{T,C}) where {T,C<:Curve} = A + (-B)
+Base.:-(A::AffinePoint{T,C}, B::AffinePoint{T,C}) where {T,C<:Curve} = A + (-B)
 point_neg(P::Point{T}, curve::C) where {T<:Fp, C<:Curve} = error("point_neg not implemented for curve $(typeof(curve))")
-Base.:-(A::ECPoint{T,C}) where {T<:Fp, C<:Curve} = is_infinity(A) ? A : ECPoint(point_neg(A.point, A.curve), A.curve)
+Base.:-(A::AffinePoint{T,C}) where {T<:Fp, C<:Curve} = is_infinity(A) ? A : AffinePoint(point_neg(A.point, A.curve), A.curve)
 
-is_infinity(P::ECPoint) = is_infinity(P.point)
+is_infinity(P::AffinePoint) = is_infinity(P.point)
 is_identity(P::Point{F}, curve::C) where {F<:Fp, C<:Curve} = P == identity(curve)
-is_identity(P::ECPoint{F,C}) where {F<:Fp, C<:Curve} = is_identity(P.point, P.curve)
-is_identity(P::ECPoint) = is_identity(P.point, P.curve)
-inverse(A::ECPoint) = is_infinity(A) || is_identity(A) ? A : ECPoint(point_neg(A.point, A.curve), A.curve)
+is_identity(P::AffinePoint{F,C}) where {F<:Fp, C<:Curve} = is_identity(P.point, P.curve)
+is_identity(P::AffinePoint) = is_identity(P.point, P.curve)
+inverse(A::AffinePoint) = is_infinity(A) || is_identity(A) ? A : AffinePoint(point_neg(A.point, A.curve), A.curve)
 
 function curve_points(curve::C) where {C<:Curve}
     T = typeof(curve.G.point.x)
@@ -72,21 +71,21 @@ end
 function subgroup_points(curve::C) where {C<:Curve}
     G = curve.G
     points = Set([k * G for k in 1:curve.order - 1])
-    return union(points, [ECPoint(identity(curve), curve)])
+    return union(points, [AffinePoint(identity(curve), curve)])
 end
 function is_point_on_curve(P::Point{F}, curve::C) where {F<:Fp, C<:Curve}
     is_infinity(P) && return true
     return curve_equation_lhs(P, curve) == curve_equation_rhs(P, curve)
 end
-is_point_on_curve(P::ECPoint{F,C}) where {F<:Fp, C<:Curve} = is_point_on_curve(P.point, P.curve)
-is_point_on_curve(P::ECPoint{F,C}, curve::C) where {F<:Fp, C<:Curve} = is_point_on_curve(P.point, curve)
+is_point_on_curve(P::AffinePoint{F,C}) where {F<:Fp, C<:Curve} = is_point_on_curve(P.point, P.curve)
+is_point_on_curve(P::AffinePoint{F,C}, curve::C) where {F<:Fp, C<:Curve} = is_point_on_curve(P.point, curve)
 
 function is_generator(G::Point{F}, curve::C, n::Integer) where {F<:Fp, C<:Curve}
     is_point_on_curve(G, curve) || return false
     return scalar_mult(n, G, curve) == identity(curve)
 end
-is_generator(P::ECPoint{T,C}, n::Integer) where {T<:Fp, C<:Curve} = is_generator(P.point, P.curve, n)
-is_generator(P::ECPoint{T,C}, curve::C, n::Integer) where {T<:Fp, C<:Curve} = is_generator(P.point, curve, n)
+is_generator(P::AffinePoint{T,C}, n::Integer) where {T<:Fp, C<:Curve} = is_generator(P.point, P.curve, n)
+is_generator(P::AffinePoint{T,C}, curve::C, n::Integer) where {T<:Fp, C<:Curve} = is_generator(P.point, curve, n)
 
 function is_singular(::C) where {C<:Curve}
     error("Singularity test not implemented for curve type $(C)")
@@ -95,9 +94,9 @@ end
 function point_add(P::Point{T}, Q::Point{T}, curve::C) where {T<:Fp, C<:Curve}
     error("point_add not implemented for curve type $(typeof(curve))")
 end
-function point_add(P::ECPoint{T,C}, Q::ECPoint{T,C}) where {T<:Fp, C<:Curve}
+function point_add(P::AffinePoint{T,C}, Q::AffinePoint{T,C}) where {T<:Fp, C<:Curve}
     P.curve == Q.curve || error("Mismatched curves")
-    return ECPoint(point_add(P.point, Q.point, P.curve), P.curve)
+    return AffinePoint(point_add(P.point, Q.point, P.curve), P.curve)
 end
 
 function scalar_mult_(k::Integer, P::Point{T}, curve::C) where {T<:Fp, C<:Curve}
@@ -139,7 +138,7 @@ end
 
 function has_order(P::Point{T},  q::Int, curve::C) where {T<:Fp, C<:Curve}
     is_infinity(P) && return false
-    G = ECPoint(P, curve)
+    G = AffinePoint(P, curve)
     return is_identity(q * G)
 end
 
@@ -164,5 +163,5 @@ function point_order(P::Point{T}, curve::C) where {T<:Fp, C<:Curve}
     end
     return 1
 end
-point_order(P::ECPoint{T,C}) where {T<:Fp, C<:Curve} = point_order(P.point, P.curve)
+point_order(P::AffinePoint{T,C}) where {T<:Fp, C<:Curve} = point_order(P.point, P.curve)
 

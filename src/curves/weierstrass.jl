@@ -4,12 +4,12 @@ using ..Field: Fp, 𝔽ₚ
 
 mutable struct Weierstrass{F<:Fp} <: Curve
     @define(Int, π, a, b, order, cofactor)
-    G::ECPoint{F, Weierstrass{F}}
+    G::AffinePoint{F, Weierstrass{F}}
 
     function Weierstrass{F}(a::Integer, b::Integer, order::Integer, cofactor::Integer, Gxy::Tuple{Integer,Integer}) where {F<:Fp}
         π = Int(F.parameters[2])
         self = new{F}(π, a, b, order, cofactor) # Incomplete initialization step
-        self.G = ECPoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self) # Fully initialize G
+        self.G = AffinePoint(Point{F}(F(Gxy[1]), F(Gxy[2])), self) # Fully initialize G
         return self
     end
 end
