@@ -1,7 +1,7 @@
 using Test
 using TinyCrypto
 
-@testset "ECPoint operator overloads and infinity behavior" begin
+@testset "AffinePoint operator overloads and infinity behavior" begin
     C = Weierstrass(30:103, 0:2, 6:100)
     G = C.G
     O = Infinity(C)

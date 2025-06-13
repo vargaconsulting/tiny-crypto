@@ -12,9 +12,9 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
     Gᶜ = curve.G
     G = Gᶜ.point
     I = Point{F}(F(0), F(1))
-    Iᶜ = ECPoint(I, curve)
+    Iᶜ = AffinePoint(I, curve)
     ∞ = Point{F}(nothing, nothing)
-    ∞ᶜ = ECPoint(∞, curve)
+    ∞ᶜ = AffinePoint(∞, curve)
     S = subgroup_points(curve)
 
     @test is_infinity(5 * ∞ᶜ)
@@ -53,8 +53,8 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "Point + inverse = identity" begin
         Pᶜ = Gᶜ
-        Nᶜ = ECPoint(point_neg(Pᶜ.point, curve), curve)
-        R₁ᶜ = ECPoint(point_add(Pᶜ.point, Nᶜ.point, curve), curve)
+        Nᶜ = AffinePoint(point_neg(Pᶜ.point, curve), curve)
+        R₁ᶜ = AffinePoint(point_add(Pᶜ.point, Nᶜ.point, curve), curve)
         @test is_identity(R₁ᶜ)
     end
 
@@ -82,7 +82,7 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "All curve points lie on the curve" begin
         for P in curve_points(curve)
-            @test is_point_on_curve(ECPoint(P, curve), curve)
+            @test is_point_on_curve(AffinePoint(P, curve), curve)
         end
     end
 
@@ -94,7 +94,7 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "Reject invalid points" begin
         bad = Point{F}(F(42), F(1337))
-        @test !is_point_on_curve(ECPoint(bad, curve), curve)
+        @test !is_point_on_curve(AffinePoint(bad, curve), curve)
     end
 
     @testset "Doubling consistency" begin
@@ -130,7 +130,7 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
         # Generator negation
         G⁻ = point_neg(G, curve)
-        @test is_identity(ECPoint(point_add(G, G⁻, curve), curve))
+        @test is_identity(AffinePoint(point_add(G, G⁻, curve), curve))
 
         # Double negation
         G⁻⁻ = point_neg(G⁻, curve)
@@ -139,15 +139,15 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
         # Arbitrary valid point
         P = Point{F}(F(5), F(7))
         if is_point_on_curve(P, curve)
-            Pᶜ = ECPoint(P, curve)
-            P⁻ᶜ = ECPoint(point_neg(P, curve), curve)
-            sumᶜ = ECPoint(point_add(P, P⁻ᶜ.point, curve), curve)
+            Pᶜ = AffinePoint(P, curve)
+            P⁻ᶜ = AffinePoint(point_neg(P, curve), curve)
+            sumᶜ = AffinePoint(point_add(P, P⁻ᶜ.point, curve), curve)
             @test is_identity(sumᶜ)
         end
     end
 
     @testset "Associativity sanity check" begin
-        Dᶜ = ECPoint(point_add(G, G, curve), curve)
+        Dᶜ = AffinePoint(point_add(G, G, curve), curve)
         G⁻ = point_neg(G, curve)
         A = point_add(Dᶜ.point, G⁻, curve)
         B = point_add(G, point_add(G, G⁻, curve), curve)

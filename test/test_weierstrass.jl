@@ -14,7 +14,7 @@ import TinyCrypto: is_identity, is_infinity, is_singular, inverse,
     Gᶜ = curve.G
     G = Gᶜ.point
     ∞ = infinity(curve)
-    ∞ᶜ = ECPoint(∞, curve)
+    ∞ᶜ = AffinePoint(∞, curve)
     S = subgroup_points(curve)
 
     @test is_infinity(5 * ∞ᶜ)
@@ -71,7 +71,7 @@ import TinyCrypto: is_identity, is_infinity, is_singular, inverse,
 
     @testset "All curve points lie on the curve" begin
         for P in curve_points(curve)
-            @test is_point_on_curve(ECPoint(P, curve), curve)
+            @test is_point_on_curve(AffinePoint(P, curve), curve)
         end
     end
 
@@ -83,7 +83,7 @@ import TinyCrypto: is_identity, is_infinity, is_singular, inverse,
 
     @testset "Reject invalid points" begin
         bad = Point{F}(F(42), F(1337))
-        @test !is_point_on_curve(ECPoint(bad, curve), curve)
+        @test !is_point_on_curve(AffinePoint(bad, curve), curve)
     end
 
     @testset "Doubling consistency" begin
@@ -120,7 +120,7 @@ import TinyCrypto: is_identity, is_infinity, is_singular, inverse,
     end
 
     @testset "Associativity sanity check" begin
-        Dᶜ = ECPoint(point_add(G, G, curve), curve)
+        Dᶜ = AffinePoint(point_add(G, G, curve), curve)
         G⁻ = point_neg(G, curve)
         A = point_add(Dᶜ.point, G⁻, curve)
         B = point_add(G, point_add(G, G⁻, curve), curve)

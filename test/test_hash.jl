@@ -52,5 +52,4 @@ using TinyCrypto: H, H8, H16, H₈, H₁₆
             @test H16(msg) isa UInt16
         end
     end
-
 end

@@ -13,8 +13,8 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
     F   = typeof(G.x)
 
     I  = identity(curve).point
-    Iᶜ = ECPoint(infinity(curve), curve)
-    ∞ᶜ = ECPoint(infinity(curve), curve)
+    Iᶜ = AffinePoint(infinity(curve), curve)
+    ∞ᶜ = AffinePoint(infinity(curve), curve)
     Gᶜ + Gᶜ + Gᶜ + Gᶜ
     4Gᶜ
     curve
@@ -59,8 +59,8 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "Point + inverse = identity" begin
         Pᶜ = Gᶜ
-        Nᶜ = ECPoint(point_neg(Pᶜ.point, curve), curve)
-        Rᶜ = ECPoint(point_add(Pᶜ.point, Nᶜ.point, curve), curve)
+        Nᶜ = AffinePoint(point_neg(Pᶜ.point, curve), curve)
+        Rᶜ = AffinePoint(point_add(Pᶜ.point, Nᶜ.point, curve), curve)
         @test is_infinity(Rᶜ)
     end
 
@@ -79,7 +79,7 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "All curve points satisfy the curve equation" begin
         for P in curve_points(curve)
-            @test is_point_on_curve(ECPoint(P, curve), curve)
+            @test is_point_on_curve(AffinePoint(P, curve), curve)
         end
     end
 
@@ -104,7 +104,7 @@ import TinyCrypto: is_identity, is_infinity, inverse, is_singular, point_neg, po
 
     @testset "Reject invalid points" begin
         bad = Point{F}(F(123), F(456))
-        @test !is_point_on_curve(ECPoint(bad, curve), curve)
+        @test !is_point_on_curve(AffinePoint(bad, curve), curve)
     end
 
     @testset "Doubling edge case: vertical tangent" begin
