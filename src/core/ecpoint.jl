@@ -10,13 +10,6 @@ Point{F}(p::Point) where {F<:Fp} = Point{F}(
 # Equality
 
 # Show
-function Base.show(io::IO, P::Point{F}) where {F<:Fp}
-    if is_infinity(P)
-        print(io, "(∞,∞)")
-    else
-        print(io, "(", P.x, ",", P.y, ")")
-    end
-end
 
 abstract type Curve end
 struct AffinePoint{T,C<:Curve}

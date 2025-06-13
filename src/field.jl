@@ -55,17 +55,6 @@ export Fp, 𝔽ₚ
     Base.UInt32(x::Fp{T,P}) where {T<:Unsigned, P} = UInt32(x.val)
     Base.Float64(x::Fp{T,P}) where {T<:Unsigned, P} = Float64(x.val)
     
-    # Compact unicode display when P < 1000: e.g., 12𝔽₃₁, else fallback to 12𝔽ₚ
-    function Base.show(io::IO, x::Fp{T,P}) where {T,P}
-        val_str = "\e[1m$(x.val)\e[22m"  # ANSI bold
-        if P < 1000000
-            subscript = join(Char(0x2080 + d) for d in reverse(Base.digits(P)))
-            print(io, "$(val_str)𝔽$subscript")
-        else
-            print(io, "$(val_str)⋅𝔽ₚ") 
-        end
-    end
-    Base.show(io::IO, ::MIME"text/plain", x::Fp{T,P}) where {T,P} = show(io, x)
 
     # Promotion for interop
     Base.convert(::Type{Fp{T,P}}, x::Integer) where {T,P} = Fp{T,P}(x)
