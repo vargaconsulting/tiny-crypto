@@ -27,7 +27,7 @@ The project includes:
   - Curve generation over `𝔽ₚ` for small primes
   - Point addition, doubling, scalar multiplication
   - Generator detection and validation
-  - Point-at-infinity and ECPoint construction
+  - Point-at-infinity and AffinePoint construction
 - Clean ANSI-formatted output for symbolic math (e.g., `𝔽₃₁`, `𝔾(6,2)`)
 - Fully written in **Julia**, for clarity and performance.
 - **Educational focus** – Ideal for teaching and cryptographic exploration.
@@ -44,7 +44,7 @@ curve = Weierstrass(97:103, 10:15, 2:7)  # (prime range, a range, b range)
 # Output: Weierstrass{𝔽₉₇}: y² = x³ + 10x + 3 | 𝔾(0,10), q = 101, h = 1, #E = 10
 
 E = curve_points(curve) # Get all curve points
-# → 101-element Vector{ECPoint₁₂₈}: (0𝔽₉₇,10𝔽₉₇), (0𝔽₉₇,87𝔽₉₇), ..., (96𝔽₉₇,63𝔽₉₇), (∞,∞)
+# → 101-element Vector{AffinePoint₁₂₈}: (0𝔽₉₇,10𝔽₉₇), (0𝔽₉₇,87𝔽₉₇), ..., (96𝔽₉₇,63𝔽₉₇), (∞,∞)
 S = subgroup_points(curve) # same as `curve_points` as #E(𝔽₉₇) ∈ primes
 
 curve = Montgomery(30:40, 8:40, 3:40)
