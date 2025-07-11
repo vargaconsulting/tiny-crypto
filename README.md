@@ -90,7 +90,16 @@ is_point_on_curve(curve.G, curve)      # true, G generator point defines the cyc
 H("byte size hash of a string")        # hashes string to a byte, given the abelian group is byte size
 H₁₆("16 bit hash")                     # in case you need more hash space
 H₈("is same") == H("is same")          # true, it is just a alias, smae as H8 
+
+## ECDSA Signature and Public Key Recovery Example
+priv, pub = genkey(curve)                     # Key generation
+msg = "hello ethereum"                        # Message to sign
+signature = sign(curve, priv, msg)            # returns a NamedTuple (r = ..., s = ..., v = ...)
+is_valid = verify(curve, pub, signature, msg) # Signature verification true
+recovered = ecrecover(curve, msg, signature)  # Public key recovery from signature
+@assert pub == recovered                      # Check if recovered public key matches original
 ```
+
 
 ## Installation
 ```
