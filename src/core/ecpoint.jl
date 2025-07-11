@@ -24,6 +24,19 @@ struct ECPoint{T,C<:Curve}
     curve::C
 end
 ECPoint(curve::C) where {C<:Curve} = ECPoint(typeof(curve.G.point.x), curve)
+function ECPoint(x::T, y::T, curve::C) where {T<:Fp, C<:Curve}
+    return ECPoint(Point{T}(x, y), curve)
+end
+function ECPoint(x::Integer, y::Integer, curve::C) where {C<:Curve}
+    T = typeof(curve.G.point.x)
+    P = Point{T}(T(x), T(y))
+    if !is_point_on_curve(P, curve)
+        throw(ArgumentError("Point ($(x), $(y)) is not on the given curve."))
+    end
+    return ECPoint(P, curve)
+end
+
+
 
 # Infinity
 is_infinity(P::Point) = P.x === nothing && P.y === nothing
@@ -43,6 +56,9 @@ Base.:*(k::Integer, A::ECPoint{T,C}) where {T,C<:Curve} = is_infinity(A) || is_i
 Base.:-(A::ECPoint{T,C}, B::ECPoint{T,C}) where {T,C<:Curve} = A + (-B)
 point_neg(P::Point{T}, curve::C) where {T<:Fp, C<:Curve} = error("point_neg not implemented for curve $(typeof(curve))")
 Base.:-(A::ECPoint{T,C}) where {T<:Fp, C<:Curve} = is_infinity(A) ? A : ECPoint(point_neg(A.point, A.curve), A.curve)
+Base.:(∈)(curve::Curve, P::ECPoint) = in(P, curve)
+Base.in(P::ECPoint, curve::Curve) = is_point_on_curve(P.point, curve)
+Base.:∉(P::ECPoint, curve::Curve) = !in(P, curve)
 
 is_infinity(P::ECPoint) = is_infinity(P.point)
 is_identity(P::Point{F}, curve::C) where {F<:Fp, C<:Curve} = P == identity(curve)
